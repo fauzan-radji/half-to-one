@@ -6,21 +6,30 @@
     <title>(½ 2 1)</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/controls.css" />
+    <script src="js/settings.js" defer></script>
     <script src="js/storage.js" defer></script>
     <script src="js/script.js" defer></script>
     <script src="js/controls.js" defer></script>
   </head>
   <body>
-    <div class="samples">
-      <img src="img/freya.jpg" alt="freya" />
-      <img src="img/jihoy.jpg" alt="jihoy" />
-      <img src="img/momo.jpg" alt="momo" />
+    <div class="styles">
+      <label style="background-image: url('img/stripe.jpg')">
+        <input type="radio" name="styles" value="stripe" checked />
+      </label>
+
+      <label style="background-image: url('img/dot.jpg')">
+        <input type="radio" name="styles" value="dot" />
+      </label>
+
+      <label style="background-image: url('img/hex.jpg')">
+        <input type="radio" name="styles" value="hex" />
+      </label>
     </div>
     <div class="rows">
       <div id="wrapper">
-        <canvas id="canvas" width="200" height="200"></canvas>
+        <canvas id="image" width="200" height="200"></canvas>
         <div class="clipper">
-          <canvas id="image" width="200" height="200"></canvas>
+          <canvas id="canvas" width="200" height="200"></canvas>
         </div>
         <div id="slider">
           <span class="divider"></span>
@@ -71,9 +80,18 @@
           </tr>
 
           <tr>
+            <td><label for="invert">Invert</label></td>
+            <td>
+              <label for="invert" class="switch">
+                <input type="checkbox" id="invert" />
+              </label>
+            </td>
+          </tr>
+
+          <tr>
             <td colspan="2">
               <div class="buttons">
-                <label for="file" class="button">Choose image</label>
+                <label for="file" class="button">Upload</label>
                 <input
                   type="file"
                   id="file"
@@ -81,6 +99,7 @@
                   style="display: none"
                 />
                 <button id="download" class="button">Download</button>
+                <button id="reset" class="button">Reset</button>
               </div>
             </td>
           </tr>

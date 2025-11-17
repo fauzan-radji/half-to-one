@@ -1,15 +1,9 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const imageCanvas = document.getElementById("image");
-const imageCtx = imageCanvas.getContext("2d");
+const imageCtx = imageCanvas.getContext("2d", { willReadFrequently: true });
 
-const stripe = loadSettings() || {
-  width: 20,
-  height: 1,
-  color: "#000000",
-  background: "#ffffff",
-  contrast: 1,
-};
+const settings = Settings.load();
 
 const imageSource = "img/freya.jpg";
 let filename = "freya.jpg";
@@ -54,23 +48,49 @@ image.onload = () => {
   }
 
   imageGray = gray;
-  draw(imageGray);
+  draw();
 };
 
 function draw() {
-  ctx.fillStyle = stripe.background;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = settings.background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = stripe.color;
+  ctx.fillStyle = settings.color;
+  ctx.strokeStyle = settings.color;
+  switch (settings.type) {
+    case "stripe":
+      drawStripe();
+      break;
 
-  const cellsX = Math.ceil(canvas.width / stripe.width);
-  const cellsY = Math.ceil(canvas.height / stripe.height);
+    case "hex":
+      drawHex();
+      break;
 
-  for (let y = 0; y < cellsY; y++) {
-    for (let x = 0; x < cellsX; x++) {
-      const startX = x * stripe.width;
-      const startY = y * stripe.height;
-      const endX = (x + 1) * stripe.width;
-      const endY = (y + 1) * stripe.height;
+    default:
+      drawDot();
+      break;
+  }
+}
+
+function drawHex() {
+  const scaledSize = settings.size * 0.8;
+  const cellHeight = (scaledSize * Math.sqrt(3)) / 2;
+  const cellWidth = scaledSize;
+
+  const cellsX = Math.ceil(canvas.width / cellWidth);
+  const cellsY = Math.ceil(canvas.height / cellHeight);
+
+  for (let y = 0; y <= cellsY; y++) {
+    const scaledY = y * cellHeight;
+    const pixelY = scaledY - cellHeight * 0.5;
+    for (let x = 0; x <= cellsX; x++) {
+      const scaledX = x * cellWidth;
+      const pixelX = scaledX - cellWidth * (y % 2 == 0 ? 0.25 : 0.75);
+
+      const startX = Math.round(pixelX);
+      const startY = Math.round(pixelY);
+      const endX = Math.round(pixelX + cellWidth);
+      const endY = Math.round(pixelY + cellHeight);
       const averageGray = getAverageGrayInArea(
         imageCanvas.width,
         imageCanvas.height,
@@ -82,18 +102,126 @@ function draw() {
       );
 
       const grayness = averageGray / 255;
-      const contrast = grayness ** stripe.contrast;
-      const width = stripe.width * (1 - contrast);
-      const offsetX = (stripe.width - width) / 2;
+      const contrast = grayness ** settings.contrast;
+      const invertedContrast = settings.invert ? 1 - contrast : contrast;
+      const size = settings.size * (1 - invertedContrast);
+      const offset = (settings.size - size) / 2;
 
-      ctx.fillRect(
-        x * stripe.width + offsetX,
-        y * stripe.height,
-        width,
-        stripe.height
-      );
+      fillHexagon(pixelX + offset, pixelY + offset, size);
     }
   }
+}
+
+function drawDot() {
+  const cellHeight = settings.size / 2;
+  const cellWidth = settings.size;
+
+  const cellsX = Math.ceil(canvas.width / cellWidth);
+  const cellsY = Math.ceil(canvas.height / cellHeight);
+
+  for (let y = 0; y <= cellsY; y++) {
+    const scaledY = y * cellHeight;
+    const pixelY = scaledY - cellHeight * 0.875;
+    for (let x = 0; x <= cellsX; x++) {
+      const scaledX = x * cellWidth;
+      const pixelX = scaledX - cellWidth * (y % 2 == 0 ? 0.25 : 0.75);
+
+      const startX = Math.round(pixelX);
+      const startY = Math.round(pixelY);
+      const endX = Math.round(pixelX + cellWidth);
+      const endY = Math.round(pixelY + cellHeight);
+      const averageGray = getAverageGrayInArea(
+        imageCanvas.width,
+        imageCanvas.height,
+        imageGray,
+        startX,
+        startY,
+        endX,
+        endY
+      );
+
+      const grayness = averageGray / 255;
+      const contrast = grayness ** settings.contrast;
+      const invertedContrast = settings.invert ? 1 - contrast : contrast;
+      const size = settings.size * (1 - invertedContrast);
+      const offset = (settings.size - size) / 2;
+
+      fillCircle(pixelX + offset, pixelY + offset, size, size);
+    }
+  }
+}
+
+function drawStripe() {
+  const cellHeight = 1;
+  const cellWidth = settings.size;
+
+  const cellsX = Math.ceil(canvas.width / cellWidth);
+  const cellsY = Math.ceil(canvas.height / cellHeight);
+
+  for (let y = 0; y < cellsY; y++) {
+    const pixelY = y * cellHeight;
+    for (let x = 0; x < cellsX; x++) {
+      const pixelX = x * cellWidth;
+
+      const startX = Math.round(pixelX);
+      const startY = Math.round(pixelY);
+      const endX = Math.round(startX + cellWidth);
+      const endY = Math.round(startY + cellHeight);
+      const averageGray = getAverageGrayInArea(
+        imageCanvas.width,
+        imageCanvas.height,
+        imageGray,
+        startX,
+        startY,
+        endX,
+        endY
+      );
+
+      const grayness = averageGray / 255;
+      const contrast = grayness ** settings.contrast;
+      const invertedContrast = settings.invert ? 1 - contrast : contrast;
+      const size = settings.size * (1 - invertedContrast);
+      const offset = (settings.size - size) / 2;
+
+      ctx.fillRect(pixelX + offset, pixelY, size, cellHeight);
+    }
+  }
+}
+
+function fillCircle(x, y, diameter) {
+  const radius = diameter / 2;
+  ctx.beginPath();
+  ctx.arc(x + radius, y + radius, radius, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function fillDiamond(x, y, size) {
+  const halfSize = size / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + halfSize, y);
+  ctx.lineTo(x + size, y + halfSize);
+  ctx.lineTo(x + halfSize, y + size);
+  ctx.lineTo(x, y + halfSize);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function fillHexagon(x, y, size) {
+  size = size * (1.2 * 0.8);
+  const width = size;
+  const height = (size * Math.sqrt(3)) / 1.5;
+  const halfWidth = size / 2;
+  const halfHeight = height / 2;
+  const quarterHeight = height / 4;
+  ctx.beginPath();
+  ctx.moveTo(x, y + quarterHeight);
+  ctx.lineTo(x + halfWidth, y);
+  ctx.lineTo(x + width, y + quarterHeight);
+  ctx.lineTo(x + width, y + quarterHeight + halfHeight);
+  ctx.lineTo(x + halfWidth, y + height);
+  ctx.lineTo(x, y + quarterHeight + halfHeight);
+  ctx.closePath();
+  ctx.fill();
 }
 
 let debounceTimeout = null;
@@ -108,6 +236,7 @@ function drawDebounced() {
 }
 
 function getAverageGrayInArea(width, height, gray, startX, startY, endX, endY) {
+  if (!gray) return 0;
   let totalGray = 0;
   let count = 0;
   for (let y = startY; y < endY; y++) {
@@ -136,14 +265,18 @@ fileInput.addEventListener("change", (e) => {
 const downloadButton = document.getElementById("download");
 downloadButton.addEventListener("click", () => {
   const link = document.createElement("a");
-  link.download = `striped-${filename}`;
+  link.download = `${settings.type}-${filename}`;
   link.href = canvas.toDataURL();
   link.click();
 });
 
-const samples = document.querySelectorAll(".samples img");
-samples.forEach((sample) => {
-  sample.addEventListener("click", () => {
-    image.src = sample.src;
-  });
+const resetButton = document.getElementById("reset");
+resetButton.addEventListener("click", () => {
+  settings.reset();
+  drawDebounced();
 });
+
+function drawPitchBlack() {
+  imageGray = imageGray.map(() => 0);
+  draw();
+}

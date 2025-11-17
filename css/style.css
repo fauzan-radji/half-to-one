@@ -25,24 +25,6 @@ body {
   gap: 2rem;
 }
 
-.samples {
-  display: flex;
-  gap: 1em;
-}
-
-.samples img {
-  width: 3rem;
-  aspect-ratio: 1/1;
-  object-fit: contain;
-  background-color: #224455;
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-
-.samples img:hover {
-  background-color: #335566;
-}
-
 #wrapper {
   width: 80vmin;
   aspect-ratio: 1 / 1;

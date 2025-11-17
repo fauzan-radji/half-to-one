@@ -43,7 +43,43 @@
   position: absolute;
   height: 100%;
   width: 100%;
-  clip-path: inset(0 0 0 var(--percentage));
+  clip-path: inset(0 calc(100% - var(--percentage)) 0 0);
+}
+
+.styles {
+  display: flex;
+  gap: 1em;
+}
+
+.styles input[type="radio"] {
+  display: none;
+}
+
+.styles label {
+  border: 2px solid transparent;
+  width: 8rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  background-color: #224455;
+  overflow: hidden;
+  aspect-ratio: 1/1;
+  box-sizing: border-box;
+
+  background-size: cover;
+  background-position: center;
+  background-clip: border-box;
+}
+
+.styles label:hover {
+  border-color: #0088ff88;
+}
+
+.styles label:has(:checked) {
+  border-color: #0088ff;
+}
+
+.styles img:hover {
+  background-color: #335566;
 }
 
 .controls {
@@ -128,4 +164,35 @@
 
 .colors .button {
   font-size: 0.6rem;
+}
+
+.switch input[type="checkbox"] {
+  display: none;
+}
+
+.switch {
+  position: relative;
+  display: block;
+  width: 2.8em;
+  height: 1.6em;
+  background: #fff;
+  border-radius: 1em;
+  cursor: pointer;
+}
+
+.switch::before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0.2em;
+  left: 0.2em;
+  width: 1.2em;
+  height: 1.2em;
+  border-radius: 100%;
+  background-color: #0088ff;
+  transition: 100ms ease-out;
+}
+
+.switch:has(:checked)::before {
+  transform: translateX(100%);
 }
